@@ -1,1 +1,104 @@
-1)
+11) 
+int main(){
+  int pid_hijo = fork();
+  int pid_padre = getpid();
+
+  if(pid_hijo == 0){ //proceso del hijo
+    while(1){
+      int msg = breceive(pid_padre);
+      msg++;
+      bsend(pid_padre,msg);
+    }
+  }
+  else{
+    int msg;
+    while(1){
+      bsend(pid_hijo, msg)
+      msg = breceive(pid_hijo);
+      msg++;
+    }
+  }
+}
+
+b)Modificar el programa anterior para que cumpla con las siguientes condiciones: 1) Padre cree dos procesos hijos en lugar de uno, y 2) se respete esta nueva secuencia de mensajes entre los tres procesos.
+1. Padre envía a Hijo_1 el valor 0,
+2. Hijo_1 envía a Hijo_2 el valor 1,
+3. Hijo_2 envía a Padre el valor 2,
+4. Padre envía a Hijo_1 el valor 3,
+...hasta llegar al valor 50.
+
+int handlerHijo1(pid_t hijo2){
+
+}
+
+int main(){
+  int pid_hijo = fork();
+  int pid_padre = getpid();
+
+  if(pid_hijo == 0){ //proceso del hijo
+    int msg;
+    pid_t pid_hijo2 = breceive(pid_padre); //recibe el pid del hijo 2 para luego usarlo
+    while(1){
+      msg = breceive(pid_padre);
+      bsend(pid_hijo2,msg++);
+    }
+  }
+  else{
+    int msg;
+    int pid_hijo2 = fork();
+    if(pid_hijo2 == 0){
+      int msg;
+      while(1){
+        msg = breceive(pid_hijo1);
+        bsend(pid_padre,msg++);
+    }
+
+    }
+    bsend(pid_hijo1,pid_hijo2);
+    while(1){
+      bsend(pid_hijo, msg);
+      msg = breceive(pid_hijo);
+      msg++;
+    }
+  }
+}
+
+13/14)
+int result;
+void proceso_izquierda() {
+  result = 0;
+  while (true) {
+    bsend(pid_derecha, result);
+    result = cómputo_muy_difícil_1();
+  }
+}
+void proceso_derecha() {
+  while(true) {
+    result = cómputo_muy_difícil_2();
+    int left_result = breceive(pid_izquierda);
+    printf("%s %s", left_result, result);
+  }
+}
+
+bool send(pid dst, int *msg) Envía al proceso dst el valor del puntero.
+                             Retorna false si la cola de mensajes estaba llena.
+
+bool receive(pid src, int *msg) Recibe del proceso src el valor del puntero.
+Retorna false si la cola de mensajes estaba vacía.
+
+int* result;
+void proceso_izquierda() {
+  *result = 0;
+  while (true) {
+    while(!send(pid_derecha,&result));    
+    *result = cómputo_muy_difícil_1();
+  }
+}
+void proceso_derecha() {
+  while(true) {
+    result = cómputo_muy_difícil_2();
+    while(!receive(pid_izquierda,&result));
+    printf("%s %s", left_result, *result);
+  }
+}
+13/1
