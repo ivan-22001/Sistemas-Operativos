@@ -39,12 +39,11 @@ int main(){
         exit(1);
     }
     else if(pid_hijo == 0){
-        pid_hijo = getpid();
         signal(SIGUSR1, pong);
     }
     else{
         sleep(0.5);
-        signal(SIGUSR1,pid_padre);
+        signal(SIGUSR1,ping);
         ping();
     }
     
