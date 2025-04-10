@@ -6,20 +6,68 @@
 #include "constants.h"
 #include "mini-shell-parser.c"
 
-static int run(char ***progs, size_t count)
-{	
+void hijo(int k, int count, int pipes[count - 1][2], char** program) {
+	
+	/*
+	printf("SOY %d\n", k);
+	int i = 0;
+	while(program[i] != NULL) {
+		printf("Program es %s\n", program[i]);
+		i++;
+	}
+	*/
+
+	if(k < count - 1) {
+		// Cierro lectura y conecto escritura a stdout (salida estándar)
+		close(pipes[k][PIPE_READ]);
+		dup2(pipes[k][PIPE_WRITE], STDOUT_FILENO);
+	}
+	
+	if(k > 0) {
+		// Cierro escritura y conecto lectura a stdin (entrada estándar)
+		close(pipes[k - 1][PIPE_WRITE]);
+		dup2(pipes[k - 1][PIPE_READ], STDIN_FILENO);
+	}
+	 
+	// Cierro referencias sobrantes
+	for(int i = 0; i < count; i++) {
+		if(i != k && i != k + 1) {
+			close(pipes[i][PIPE_READ]);
+			close(pipes[i][PIPE_WRITE]);
+		}
+	}
+
+	// Ejecuto
+	execvp(program[0], program);
+		
+}
+
+static int run(char ***progs, size_t count) {	
+	
 	int r, status;
 
-	//Reservo memoria para el arreglo de pids
-	//TODO: Guardar el PID de cada proceso hijo creado en children[i]
+	// Reservo memoria para el arreglo de pids
 	pid_t *children = malloc(sizeof(*children) * count);
+	
+	int pipes[count - 1][2];
 
-	//TODO: Pensar cuantos procesos necesito
-	//TODO: Pensar cuantos pipes necesito.
+	for(int i = 0; i < count - 1; i++) {
+		int p = pipe(pipes[i]);
+	}
 
-	//TODO: Para cada proceso hijo:
-			//1. Redireccionar los file descriptors adecuados al proceso
-			//2. Ejecutar el programa correspondiente
+	for(int i = 0; i < count; i++) {
+		pid_t nuevoHijo = fork();
+		if(nuevoHijo == 0) {
+			hijo(i, count, pipes, progs[i]);
+		}
+		children[i] = nuevoHijo;
+	}
+	
+	// Cierro todos los pipes del padre
+	for(int i = 0; i < count - 1; i++) {
+		close(pipes[i][PIPE_READ]);
+		close(pipes[i][PIPE_WRITE]);
+	}
 
 	//Espero a los hijos y verifico el estado que terminaron
 	for (int i = 0; i < count; i++) {

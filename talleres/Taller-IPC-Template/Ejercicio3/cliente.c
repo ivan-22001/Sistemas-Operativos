@@ -35,7 +35,7 @@ int main() {
 		scanf("%s",buff);
 		if(strcmp(buff,"exit") == 0) break;
         printf("Le envio al servidor: %s \n", buff);
-        write(server_socket, buff,strlen(buff)+1);
+        write(server_socket, buff,strlen(buff)+1); // hago el strlen(buff) + 1 asi el servidor sabe donde termine el string
         read(server_socket, &n, sizeof(n));
 		printf("El resultado de la operacion es: %d \n",n);
     }
