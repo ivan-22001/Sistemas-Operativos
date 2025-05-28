@@ -1,0 +1,12 @@
+Considerar la siguiente ruta a un archivo: /home/aprobar.txt.
+a) En un sistema basado en FAT, ¿cuántos bloques de disco se deben acceder para llegar a los
+bloques de datos de este archivo?
+b) En un sistema basado en ext2, se quiere leer el archivo /pepe.txt, que es un enlace simbólico
+al archivo mencionado arriba. El enlace no está cargado en memoria. ¿Cuántos bloques de
+disco se deben acceder para llegar a los bloques de datos del archivo referenciado?
+
+a)Primero hay que acceder al directorio raiz home y acceder a su bloque, luego en home se busca en el directorio
+raiz aprobar.txt y se accede a su bloque inicial. Hay 3 accesos a disco
+
+
+b)
