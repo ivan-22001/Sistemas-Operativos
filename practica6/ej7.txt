@@ -19,3 +19,5 @@ pero con un factor constante pequeño.
 
 3) Inodos. EN FAT se necesita un espacio para la tabla limitando el tamaño maximo de un archivo 
 y cada entrada del FAT es de 32 bits si es FAT32
+
+4)  En un sistema basado en inodos, solo es necesario cargar en memoria los inodos de los archivos abiertos en un momento dado, por lo que el uso de memoria es proporcional (lineal) al número de archivos abiertos.
