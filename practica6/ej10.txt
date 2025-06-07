@@ -1,0 +1,60 @@
+Se tiene un disco formateado con FAT para el cual se quiere poder devolver el contenido de un
+archivo a partir de su ruta absoluta. Para ello se debe implementar la función:
+datos = cargar_archivo(directorios[])
+donde directorios es la lista de los nombres de los directorios de la ruta (ordenados, inclu-
+yendo el nombre del archivo, y sin incluir al directorio raíz). Es decir, si el archivo a abrir es
+\Documentos\Users\foto.png entonces directorios = [’Documentos’, ’Users’, ’foto.png’].
+Para ello se cuenta con las siguientes funciones auxiliares
+
+FAT_entry(block_address): devuelve la entrada de la tabla FAT de la posición block_address.
+
+raw_data = read_blocks(block_address1,block_address2,...): lee del disco todos los bloques indicados por parámetro, en orden.
+parse_directory_entries(raw_data): devuelve una lista de struct_entrada_directorio, donde cada elemento representa los subdirectorios del directorio pasado en raw_data.
+raw_data = root_table(): devuelve los datos de la tabla de directorios de root.
+Se pide:
+a) Enumerar tres campos que debe tener la estructura struct_entrada_directorio según este
+tipo de filesystem.
+b) Escribir el pseudo-código de la función cargar_archivo
+
+
+a) Tiene  que tener el nombre del directorio, luego el tamaño y por ultimo en que bloque de la fat comienza.
+
+b)
+
+cargar_archivo(directorios[]){
+  data = root_table(); 
+
+  act_dir = parse_directory_entries(data); // devuelve una lista de struct entrada de directori
+    // aca estan los subdirectorios de root
+  for(int i = 0; i < len(directorios); i++){
+  // empiezo a navegar por los directorios
+    encontrado = false;
+    for(j = 0; j < len(act_dir);j++){
+      if(strncmp(directorios[i],act_dir[j].nombre) == 0){
+        int size = act_dir[j].tamaño;
+        block = act_dir[j].bloque;
+        int* blocks = malloc(size); // me pido tantos bytes que ocupa el bloque
+        blocks.append(block);
+        size -= BLOCK_SIZE; // se que tamaño tienen los bloques
+        while(FAT_entry(block) != EOF){  
+          block = FAT_entry(block); // como no es EOF traigo y lo pongo en la lista
+          blocks.append(block);
+          size -= BLOCK_SIZE; 
+        }
+        //Hubo un EOF, leo lo que resta.
+        block = read(block,size); // leo los ultimos bytes restantes
+        blocks.append(block);
+        // ya termine de cargar todos los bloques que necesitaba
+        data = read_blocks(blocks); // me traigo la data
+        encontrado = true;
+        break; //sale del ciclo, ya que encontre lo que buscaba
+      }
+      
+    }
+    if(i == len(directorios) - 1 && encontrado)
+      return data; // ya consegui lo que buscaba
+    // caso contrario sigo navegando por directorios
+    act_dir = parse_directory_entries(data);
+  }
+  return ERROR; // devulvo error si no lo encontre
+}
