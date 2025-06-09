@@ -1,0 +1,39 @@
+4)
+
+struct credential {
+  char name[32];
+  char pass[32];
+}  
+bool login(void) {
+  char realpass[32];
+  struct credential user;
+  // Pregunta el usuario
+  printf("User: ");
+  fgets(user.name, sizeof(user), stdin);
+  // Obtiene la contraseña real desde la base de datos y lo guarda en realpass
+  db_get_pass_for_user(user.name, realpass, sizeof(realpass));
+  // Pregunta la contraseña
+  printf("Pass: ");
+  fgets(user.pass, sizeof(user), stdin);
+  return strncmp(user.pass, realpass, sizeof(realpass)-1) == 0;
+  // True si user.pass == realpass
+}
+
+a)
+Pila:
+
+| user.name | 
+| user.pass |
+|  realpass |
+|    ebp    |
+|return_addr|
+
+El usuario tiene control sobre user.pass y user.name. El que puede afectar es el user.pass ya que 
+con fgets pedis 64 bytes pero user.pass es de 32bytes. Entonces sobreescribe la variable
+realpass.
+b) Para que el usuario pueda logerse sin saber la clave, tendria que poner un valor de 64 bytes.
+Tiene que separar las dos partes de 32bytes y poner el mismo valor, ya que fgets va a sobreescribir 
+realpass y si pongo que los dos pass sean iguales ya entre.
+
+6)a) el float puede ser un NaN
+
