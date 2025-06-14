@@ -37,3 +37,35 @@ realpass y si pongo que los dos pass sean iguales ya entre.
 
 6)a) el float puede ser un NaN
 
+
+8) 
+#define BUF_SIZE 1024
+void wrapper_ls(const char * dir) {
+  char cmd[BUF_SIZE];
+  snprintf(cmd, BUF_SIZE-1, "ls %s", dir);
+  system(cmd);
+}
+
+a) ". ; cat /etc/passwd" de esta manera muestra lo que hay en passwd
+b) Ahora estamos limitados por el "ls \"%s\"" lo cual espera solo un parametro, si pasas mas va a fallar.
+ Entonces ahora en el input tenemos que agregar un fin de string por ejemplo "\tmp/", el /" para comillas escapadas.
+Entonces podria poner algo asi dir = "./"; cat \etc\passwd/" y el system lo interpretaria de la siguiente manera: ls  ls "."; cat /etc/passwd ; echo \"" .
+c) Se puede agregar el && para que ejecute ambos comandos.
+d) Hay que sanitizar mejor el input dir en caso de seguir usando system. pero lo mejor es evitar su uso. Una implementación más segura sería utilizando forks y exec:
+
+void secure_wrapper_ls(const char * dir) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Proceso hijo
+        execlp("ls", "ls", dir, (char *)NULL);
+        _exit(EXIT_FAILURE); // si el exec falla
+    }
+    else if (pid > 0) {
+        // proceso padre
+        wait(NULL); // espero a que termine hijo
+    }
+    else {
+        perror("fork");
+    }
+}
+con el exec nos ahorramos que se ejecuten comandos en el shell y no interpreta el |, ; y &. Entonces no hay inyeccion.
