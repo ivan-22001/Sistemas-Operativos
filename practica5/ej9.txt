@@ -65,19 +65,21 @@ char input_mem[3][100];
 char buffer_lectura[3][1000];
 atomic_int buffer_start[3];
 atomic_int buffer_end[3];
+semaphore sem_presiono[3];
 boolean procesos_activos[3] = {false,false,false};
 void driver_load() {
   // Se corre al cargar el driver al kernel.
   // asigno espacios para cada input
-  input_mem[0] = INPUT_MEM_0;
-  input_mem[1] = INPUT_MEM_1;
-  input_mem[2] = INPUT_MEM_2;
+  mem_map(INPUT_MEM_0,input_mem[0],100);
+  mem_map(INPUT_MEM_1,input_mem[1],100);
+  mem_map(INPUT_MEM_2,input_mem[2],100);
   request_irq(IRQ_KEYB, key_handler);
   int read = sem(0); // lo uso cada vez que alguien presiona
 
   for(int i = 0; i<3; i++ ){
     buffer_start[i] = 0;
     buffer_end[i] = 0;
+    sema_init(sem_presiono[i],0);
     procesos_activos[i] = false;
   }
 }
@@ -100,22 +102,24 @@ void key_handler(){
      }
    }
     
-   if( write_to_all_buffers(c)){
+   if(!write_to_all_buffers(c)){
         OUT(KEYB_REG_CONTROL,READ_FAILED);
    }
+    for(int i = 0; i < 3; i++)sem_presiono[i];
   
   }
 
   else{
-    if(get_buffer_length(i) == 100){
+    if(get_buffer_length(p) == 100){
       / no hay mas lugar en el buffer
-       buffer_start[i] = 0;
-       buffer_end[i] = 0;
+       buffer_start[p] = 0;
+       buffer_end[p] = 0;
     }
-      if(!write_to_buffer(i,c)) {
+      if(!write_to_buffer(p,c)) {
         OUT(KEYB_REG_CONTROL,READ_FAILED);
         
       };
+      sem_presiono[p].signal();
      read.signal(); 
   }
   
@@ -157,13 +161,11 @@ int driver_read(int id, char* buffer, int length) {
   
   while(buffer_start[id]+length > buffer_end[id]){ // mientras no haya suficiente espacio para leer espero
     if(!procesos_activos[id]) return -1; // se cerro el programa
+    sem_presiono[id].wait();//espero a que se presione devuelta
+    
   }
   copy_from_buffer(id,buffer,length);
   buffer_start[id].inc(length);
 
   return length;
-}
-int driver_write(char* input, int size, int proceso) {
-  copy_from_user(input_mem[proceso], input, size);
-  return size;
 }
