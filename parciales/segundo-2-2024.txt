@@ -1,0 +1,87 @@
+1)
+my_copyExt2(path1,path2){
+  Ext2FSInode inode1 = inode_for_path(path1); // nos devuelve el inodo del archivo
+  Ext2FSInode inode2 = inode_for_path(path2);
+
+  unsigned int size1 = inode1->size;
+  unsigned int size2 = inode2->size;
+  unsigned int cantBlocks = size / block_size; // calculo cantidad de bloques que tiene el inodo
+  unsigned int cantBLocks2 = size2 / block_size;
+  unsigned int size2 = inode2->size;
+  
+  unsigned char* buffer = (unsigned char*) malloc(block_size);
+  
+  for(int i = 0; i < cantBLocks; i++){
+    unsigned int lba1 = get_block_address(inode1, i); // me traigo el bloque numero 
+    
+    read_block(lba1,buffer);
+    
+    if(i > cantBLocks2){ // por si el inodo1 tiene mas bloques que el 2 
+      unsigned int lba2 = get_free_block_addres(inode2);
+      add_block_addres_to_inode(inode2,lba2,i);
+      
+    }
+    write_block(lba2,buffer);
+  }
+  
+  free(buffer);
+}
+
+my_copyFAT(path1,path2){
+  unsigned int src = get_init_block_for_path(path1);
+  unsigned int dst = get_init_block_for_path(path2);
+
+  unsigned char* buff = malloc(block_size);    
+  
+  while(src != EOF){
+    read_block(src,buff);
+    write_block(dst,buff);
+    
+    src = FAT[src];
+    if(dst == EOF){
+      dst = unsigned int block = get_free_block_address();
+    }
+    dst = FAT[dst];
+    
+  }
+}
+
+b) Para get_init_block_path iria recorriendo el path hasta llegar al ultimo, esto quiere decir
+que navego por los directorios hasta llegar al ultimo. Una vez ubicado en el archivo o directorio 
+me traigo el bloque inicial.
+En ext2 tendria que navegar por los Ext2FSDir, tengo que hacer un directorio a la vez. 
+
+
+2) Para manejar el seguidor de linea se necesitara 2 drivers, el de las ruedas y sensores. Cada driver 
+tendra un registro correspondiente por cada dispositivo conectado. El de sensores los 3 usados y 2 ruedas.
+Se usara interrupciones. Cada vez que que cambie de estado de los sensores. Ya que constantemente estan leyendo, 
+entonces si el estado de los sensores cambia, ahi las ruedas van a tener que cambiar su velocidad para saber donde doblar.
+Por ejemplo, si el sensor izq esta en negro, la rueda derecha tendra que ir mas rapido hasta que se estabilice,
+si el derecho esta en en negro, el izq tendra que ir mas rapido hasta que se estabilice.
+
+b) 
+enum {White,Black};
+enum {Norm,Fast};
+void user_program(){
+  // abro los drivers apropiados
+  int sensor = open("/dev/sensor");
+  int ruedas = open("/dev/ruedas");
+
+  while(1){
+    int mid = IN(MID_REG);
+    int izq = IN(IZQ_REG);
+    int der = IN(DER_REG);
+  }
+  if(mid == Black){
+    OUT(RIGHT_WHEEL,Norm);
+    OUT(LEFT_WHEEL,Norm);
+  }
+  else if(izq ==Black){
+    OUT(Right_WHEEL,FAST);
+  }
+  else{
+    OUT(LEFT_WHEEL,Norm);
+  }
+  
+}
+
