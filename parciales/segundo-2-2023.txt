@@ -1,0 +1,153 @@
+1)Se tiene un disco formateado con FAT para el cual se quiere poder devolver el contenido de un archivo a partir de su
+ruta absoluta. Para ello se debe implementar la funci´on:
+datos = cargar_archivo(directorios[])
+donde directorios es la lista de los nombres de los directorios de la ruta (ordenados, incluyendo el nom-
+bre del archivo, y sin incluir a root). Es decir, si el archivo a abrir es \Documentos\Users\foto.png entonces
+directorios = ['Documentos','Users','foto.png'].
+Para ello se cuenta con la siguientes funciones auxiliares:
+FAT_entry(block_address) que devuelve la entrada de la tabla FAT de la posici´on block_address.
+raw_data = read_blocks(block_address1,block_address2,...) que lee del disco todos los bloques indicados por par´ametro, en orden.
+parse_directory_entries(raw_data) que devuelve una lista de struct_entrada_directorio que representan las entradas de directorio del
+directorio pasado en raw_data.
+raw_data = root_table() que devuelve los datos de la tabla de directorios de root.
+a) Enumere tres campos que debe tener, seg´un este tipo de filesystem, la estructura struct_entrada_directorio.
+b) Escribir el pseudo-c´odigo de la funci´on cargar_archivo.
+
+a) Los 3 campos son, el nombre, tamaño y bloque de inicio
+
+
+b)
+cargar_archivo(directorios[]){
+  data = root_table(); 
+
+  act_dir = parse_directory_entries(data); // devuelve una lista de struct entrada de directori
+    // aca estan los subdirectorios de root
+  for(int i = 0; i < len(directorios); i++){
+  // empiezo a navegar por los directorios
+    encontrado = false;
+    for(j = 0; j < len(act_dir);j++){
+      if(strncmp(directorios[i],act_dir[j].nombre) == 0){
+        int size = act_dir[j].tamaño;
+        block = act_dir[j].bloque;
+        int* blocks = malloc(size); // me pido tantos bytes que ocupa el bloque
+        blocks.append(block);
+        size -= BLOCK_SIZE; // se que tamaño tienen los bloques
+        while(FAT_entry(block) != EOF){  
+          block = FAT_entry(block); // como no es EOF traigo y lo pongo en la lista
+          blocks.append(block);
+          size -= BLOCK_SIZE; 
+        }
+        //Hubo un EOF, leo lo que resta.
+        block = read(block,size); // leo los ultimos bytes restantes
+        blocks.append(block);
+        // ya termine de cargar todos los bloques que necesitaba
+        data = read_blocks(blocks); // me traigo la data
+        encontrado = true;
+        break; //sale del ciclo, ya que encontre lo que buscaba
+      }
+      
+    }
+    if(i == len(directorios) - 1 && encontrado)
+      return data; // ya consegui lo que buscaba
+    // caso contrario sigo navegando por directorios
+    act_dir = parse_directory_entries(data);
+  }
+  return ERROR; // devulvo error si no lo encontre
+}
+
+
+2)
+struct device_t{
+  int pid ;
+  bool busy;
+  int mtx;
+  cola queue;
+}devices[3]
+
+int drivir_init(){ 
+  bool done = false;
+  while(!done){
+    done |= (IN(CONTROL_1) && IN(CONTROL_2) && IN(CONTROL_3)); // los equipos deben estar libres
+  }
+  for(int i = 0; i < 3 ; i++){
+    devices[i].busy = false;
+    sem_init(devices[i].mtx,1);
+    request_irq(EQUIPO_IRQ_i,handler_i); // cada equipo va a tener su handler
+  }
+  return IO_OK;
+}
+
+int open(int id){
+    if(!pertenece(id,devices)) return IO_ERROR;
+
+    sem_wait(devices[id].mtx);
+    devices[id].busy = true;
+    devices[id].pid = task_pid_nr(current);
+    return IO_OK;
+}
+
+int close(int id){
+  sem_signal(devices[id].mtx);
+  devices[id].busy = false;
+  return IO_OK;
+}
+
+int remove(){
+  OUT(CONTROL_X,0);
+  free_irq(EQUIPO_IRQ_X);
+  return IO_OK;
+}
+
+bool match_id(int id, int pid){
+  return devices[id].busy && devices[id].pid == pid;
+}
+
+
+int write(int id, char* data, int cantidad){
+  if(match_id(id,task_pid_nr(current)));
+  char* buffer = kmalloc(cantidad);
+  copy_from_user(buffer,data,cantidad);
+  for(i = 0; i < cantidad;i++)
+    devices[id].queue.push(buffer[i]);
+  
+  return IO_OK;
+}
+
+int mandar_byte(id){
+  if(devices[id].cola.empty()) return IO_ERROR;
+  OUT(ADDRESS_id,devices[id].cola.pop());
+  return IO_OK;
+}
+
+void handler_X(){
+  mandar_byte(X);
+}
+
+
+4)
+Dado el c´odigo a continuaci´on:
+ void imprimir_habilitado(const char *nombre_usuario, const char* clave, const char * imprimir, int tam_imprimir) {
+   char *cmd = malloc(tam_imprimir+5 * sizeof(char));
+   if (cmd == NULL) exit(1);
+   if (usuario_habilitado("/etc/shadow", nombre_usuario, clave)) {
+     snprintf(cmd, tam_imprimir+4, "echo %s", imprimir);
+     system(cmd);
+   } else {
+     printf("El usuario o clave indicados son incorrectos.");
+     assert(-1);
+ }
+}
+El objetivo de la funci´on es imprimir por pantalla el texto enviado como par´ametro por el usuario, siempre y cuando
+el nombre de usuario y clave provistos por dicho usuario sean correctos.
+Para esto se cuenta con la funci´on usuario_habilitado que se sabe funciona correctamente y no cuenta con proble-
+mas de seguridad. La misma utiliza strings terminados en caracter nulo (\0) y lee el archivo provisto de contrase˜nas
+(encriptadas) de todos los usuarios del sistema, que puede ser s´olo le´ıdo por root, devolviendo un booleano indicando si
+el usuario y la clave ingresados se encuentran en dicho archivo.
+a) Indique si es necesario que el programa corra con alg´un nivel espec´ıfico de permisos. Justifique en qu´e l´ıneas y
+porqu´e.
+b) Indique dos problemas de seguridad que podr´ıan surgir (hint: tenga en cuenta el ´ıtem anterior).
+c) Indique alguna manera (valuaci´on de los par´ametros) de poder explotar cada una de las vulnerabilidades mencio-
+nadas.
+d) Indique el impacto de las vulnerabilidades mencionadas, analiz´andolas seg´un los tres requisitos fundamentales de
+la seguridad de la informaci´on.
+e) Para cada vulnerabilidad, proponga una soluci´on, indicando c´omo modificar´ıa el c´odigo en caso de corresponder.
