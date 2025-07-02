@@ -1,0 +1,47 @@
+1)Ejercicio de buscar hard links
+
+
+void buscar_hard_links(int* res, Ext2FSInode* inode){
+  unsigned int blocks = inode->size / block_size;
+  int* res;
+  unsigned char buff = malloc(block_size);
+  for(int i = 0; i < blocks; i++){
+    unsigned int lba = get_block_address(inode,i);
+    read_block(lba,buffer);
+    int offset = 0;
+    while(offset < block_size){
+      Ext2FSDirEntry* entry = (Ext2FSDirEntry*) (buff + offset);
+      if(entry->file_type == "d")
+        concat(res, load_inode(entry->inode));
+      else if(entry->file_type == "f"){
+        Ext2FSInode* inode2 = load_inode(entry->inode);
+        if(inode2->link_count > 1){
+          char ** names = malloc(sizeof(char*)*inode2->link_count);
+          names[0] = entry->name;
+          buscarEnlaces(entry->inode,names,load_inode(root));
+          printf(names);
+          concat(res,inode); // no repito inodos, pero fiaca
+        }
+      }
+    }
+  }
+}
+
+void buscarEnlaces(int inodeN,char** names, Ext2FSInode* inode){
+  unsigned int blocks = inode->size / block_size;
+  unsigned char buff = malloc(block_size);
+  for(int i = 0; i < blocks; i++){
+    unsigned int lba = get_block_address(inode,i);
+    read_block(lba,buffer);
+    int offset = 0;
+    while(offset < block_size){
+      Ext2FSDirEntry* entry = (Ext2FSDirEntry*) (buff + offset);
+      if(entry->file_type == "d")
+        buscarEnlaces(inodeN,names,load_inode(entry->inode));
+      else if(entry->file_type == "f" && entry_inode == inodeN && in(entry->name,names)){
+        concat(names,entry->name);  
+      }
+    }
+  }
+}
+
